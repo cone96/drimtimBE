@@ -14,21 +14,32 @@ class TweetController extends Controller
 {
     public function showAllTweets(Request $request) {
 
-        //error_log($request->user_id);
-
-        $id = $request->user_id;
-
-
-        //error_log($id);
         $request->validate([
-            'user_id' => 'integer|exists:users, id',
+            'id' => 'integer|exists:users,id',
         ]);
 
-        if($id) {
-            return Response::json(Tweet::where('user_id', $id)->get());
-        } else {
-            return Response::json(Tweet::all());
+        if($request->id) {
+            $name = User::select('name')->where('id', $request->id)->get();
+            return Response::json(['name' => $name, 'tweet' => Tweet::where('user_id', $request->id)->get()]);
+        } 
+        else {
+            return Response::json(['tweet' => Tweet::all()]);
       }
     }
 
+
+    public function addTweet(Request $request) {
+        
+        $user = User::findOrFail($request->id);
+
+        $id = Tweet::create([
+            'user_id' => $request->id,
+            'content' => $request->content,
+        ])->id;
+
+        $tweet = Tweet::findOrFail($id);
+        $user->tweets()->save($tweet);
+
+        return Response::json(['success' => true, 'message' => $user]);
+    }
 }
