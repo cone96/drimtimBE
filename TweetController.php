@@ -20,10 +20,10 @@ class TweetController extends Controller
 
         if($request->id) {
             $name = User::select('name')->where('id', $request->id)->get();
-            return Response::json(['name' => $name, 'tweet' => Tweet::where('user_id', $request->id)->get()]);
+            return Response::json(['name' => $name, 'tweet' => Tweet::where('user_id', $request->id)->orderBy('created_at', 'desc')->get()]);
         } 
         else {
-            return Response::json(['tweet' => Tweet::all()]);
+            return Response::json(['tweet' => Tweet::join('users', 'tweets.user_id', '=', 'users.id')->orderBy('tweets.created_at', 'desc')->select('*')->get()]);
       }
     }
 
@@ -40,6 +40,6 @@ class TweetController extends Controller
         $tweet = Tweet::findOrFail($id);
         $user->tweets()->save($tweet);
 
-        return Response::json(['success' => true, 'message' => $user]);
+        return Response::json(['success' => true, 'id' => $id, 'message' => $user]);
     }
 }
