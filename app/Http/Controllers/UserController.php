@@ -6,21 +6,42 @@ use Illuminate\Http\Request;
 use Response;
 use App\User;
 use App\Tweet;
+use App\Friend;
 use Hash;
-use App\Http\Requests\PostRequest;
-
 
 
 class UserController extends Controller
 {
     public function showProfileDetails(Request $request) {
 
-        $user = User::findOrFail($request->id);
-        if(!$user->locked) {
-            $tweets = $user->tweets;
+        if($request->id1 == $request->id2)
+        {
+            $user = User::findOrFail($request->id1);
+            if(!$user->locked) {
+                $tweets = $user->tweets;
+            }
+            return Response::json(['success' => true, 'message' => $user]);
         }
-        return Response::json(['success' => true, 'message' => $user]);
-      
+        else
+        {
+            $user = User::findOrFail($request->id2);
+            if(!$user->locked){
+                $tweets = $user->tweets;
+            }
+                if(in_array($request->id1, $user->friends->pluck('id')->all()))
+                    return Response::json(['message' => $user, 'friends' => 1]);
+                
+                $find = Friend::where('user_id',$request->id1)->where('friend_id',$request->id2)->where('accepted',false)->first();
+                if ($find)
+                    return Response::json(['message' => $user, 'friends' => 0, 'request_sender' => $request->id1, 'request_receiver' => $request->id2]);
+
+                $find = Friend::where('user_id',$request->id2)->where('friend_id',$request->id1)->where('accepted',false)->first();
+                if($find)
+                    return Response::json(['message' => $user, 'friends' => 0, 'request_sender' => $request->id2, 'request_receiver' => $request->id1]);
+
+                return Response::json(['message' => $user, 'friends' => 0, 'message' => 'No friend request']);
+            
+        }
     }
 
     public function changePassword(Request $request) {
